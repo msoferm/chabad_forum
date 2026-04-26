@@ -5,7 +5,8 @@ export default function Footer() {
   const [settings, setSettings] = useState({});
 
   useEffect(() => {
-    fetch((process.env.REACT_APP_API_URL || 'http://localhost:5001/api') + '/public/settings')
+    const base = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5001/api' : '/api');
+    fetch(base + '/public/settings')
       .then(r => r.json()).then(setSettings).catch(() => {});
   }, []);
 
