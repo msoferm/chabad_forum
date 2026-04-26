@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { auth, SECRET } = require('../middleware');
+const { auth, getSecret } = require('../middleware');
 
 // Sanitize input - strip HTML/script tags
 function sanitize(str) { return str ? str.replace(/<[^>]*>/g, '').trim() : ''; }
@@ -24,7 +24,7 @@ router.post('/register', async (req, res) => {
       [username, email, hash, display_name || username]
     );
     const user = result.rows[0];
-    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET, { expiresIn: '30d' });
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, getSecret(), { expiresIn: '30d' });
     res.status(201).json({ user, token });
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'שם משתמש או אימייל כבר קיימים' });
@@ -42,7 +42,7 @@ router.post('/login', async (req, res) => {
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ error: 'שם משתמש או סיסמה שגויים' });
     await db.query('UPDATE users SET last_seen=NOW() WHERE id=$1', [user.id]);
-    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET, { expiresIn: '30d' });
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, getSecret(), { expiresIn: '30d' });
     const { password_hash, ...safeUser } = user;
     res.json({ user: safeUser, token });
   } catch (err) { res.status(500).json({ error: err.message }); }
